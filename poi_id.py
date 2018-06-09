@@ -15,6 +15,8 @@ sys.path.append("tools/")
 # ================================================== #
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
 # ================================================== #
 #               Scaler and feature selection         #
 # ================================================== #
@@ -28,13 +30,13 @@ from sklearn import cross_validation
 from tester import dump_classifier_and_data
 from sklearn.cross_validation import StratifiedShuffleSplit, train_test_split
 from tester import dump_classifier_and_data, test_classifier
+from sklearn.metrics import recall_score, precision_score, f1_score
 # ===================================================#
 from sklearn.pipeline import Pipeline
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import accuracy_score
 from time import time
 import numpy as numpy
-
 
 ### Task 1: Select what features you'll use.
 ### features_list is a list of strings, each of which is a feature name.
@@ -179,11 +181,11 @@ def create_new_features(dictionary):
     features_list.append('income')
     
 
-def select_best_features(n_features, features, labels):
+def select_best_features(n_features):
     """Seleciona as n melhores features de acordo com a variancia.
     
-    Responsavel por selecionar as 10 melhores features com base 
-    na analise de variancia ANOVA.
+    Responsavel por selecionar as n melhores features com base 
+    na analise de variancia.
     
     Args:
         n_features: numero de features que deseja
@@ -193,14 +195,82 @@ def select_best_features(n_features, features, labels):
     Returns:
         
     """
+    data = featureFormat(data_dict, features_list, remove_all_zeroes = False, sort_keys = True)
+    labels, features = targetFeatureSplit(data)
+    features_train, features_test, labels_train, labels_test = \
+        train_test_split(features, labels, test_size=0.3, random_state=42)
     selector = SelectKBest(k = n_features)  
     selector.fit_transform(features, labels)
     selected_indices = selector.get_support(indices=True)
     final_features = []
     for indice in selected_indices:
-        print 'feature -> {} with score -> {}'.format(features_list[indice + 1], selector.scores_[indice])
+        #print 'feature -> {} with score -> {}'.format(features_list[indice + 1], selector.scores_[indice])
         final_features.append(features_list[indice + 1])
     return final_features
+
+def selectKBest_f1_scores(clf, dataset, n_kbest_features, folds = 1000):
+    """ Verifica os scores do numero de features selecionadas.
+    
+    Responsavel por selecionar o score F1 de 2 ate n_kbest_features.
+    
+    Args: 
+        clf: classificador utilizado para a analise
+        dataset: dados utilizados
+        n_kbest_features: numero de maximo de features permitido.
+        
+    Returns:
+        retorno1: Lista de valores K
+        retorno2: Lista de Scores F1
+    """
+    graficoX = []
+    graficoY = []
+    for k in range(2, n_kbest_features):
+        features_selected = select_best_features(k)
+        features_selected.insert(0, "poi")
+        data = featureFormat(dataset, features_selected, sort_keys = True)
+        labels, features = targetFeatureSplit(data)
+        cv = StratifiedShuffleSplit(labels, folds, random_state = 42)
+        true_negatives = 0
+        false_negatives = 0
+        true_positives = 0
+        false_positives = 0
+        for train_idx, test_idx in cv: 
+            features_train = []
+            features_test  = []
+            labels_train   = []
+            labels_test    = []
+            for ii in train_idx:
+                features_train.append( features[ii] )
+                labels_train.append( labels[ii] )
+            for jj in test_idx:
+                features_test.append( features[jj] )
+                labels_test.append( labels[jj] )
+
+            clf.fit(features_train, labels_train)
+            predictions = clf.predict(features_test)
+            for prediction, truth in zip(predictions, labels_test):
+                if prediction == 0 and truth == 0:
+                    true_negatives += 1
+                elif prediction == 0 and truth == 1:
+                    false_negatives += 1
+                elif prediction == 1 and truth == 0:
+                    false_positives += 1
+                elif prediction == 1 and truth == 1:
+                    true_positives += 1
+                else:
+                    print "Warning: Found a predicted label not == 0 or 1."
+                    print "All predictions should take value 0 or 1."
+                    print "Evaluating performance for processed predictions:"
+                    break
+        try:
+            f1 = 2.0 * true_positives/(2*true_positives + false_positives+false_negatives)
+            graficoY.append(f1)
+            graficoX.append(k)
+        except:
+            print "Got a divide by zero when trying out:", clf
+            print "Precision or recall may be undefined due to a lack of true positive predicitons."
+    return  graficoX, graficoY
+        
 
 #O modelo mais promissor foi o AdaBoost! Para facilitar o processo de tuning, 
 # irei automatizar o processo com a construcao de uma pipeline, 
@@ -361,7 +431,16 @@ from sklearn.cross_validation import train_test_split
 features_train, features_test, labels_train, labels_test = \
     train_test_split(features, labels, test_size=0.3, random_state=42)
 
-features_list =  select_best_features(10, features_train, labels_train)
+x, y = selectKBest_f1_scores(GaussianNB(), data_dict, 20)
+plt.figure()
+plt.xlabel("Numero de features selecionadas")
+plt.ylabel("Valor de F1-Score")
+plt.plot(x, y)
+plt.savefig('featureSelection.png', transparent=True)
+plt.show()
+
+
+features_list =  select_best_features(17)
 features_list.insert(0, "poi")
 print features_list
 #########################################################################################

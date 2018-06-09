@@ -24,3 +24,12 @@ Aprendizagem de Máquina é um ticket de primeira classe para uma das carreiras 
 Como fontes de dados se proliferam juntamente do poder de processamento dos computadores atuais, analisar os dados diretamente é uma das formas mais interessantes de obter conhecimento novo e realizar previsões.
 
 Aprendizagem de Máquina junta o poder da ciência da computação e da estatística para atingir esse poder preditivo.
+
+O projeto utiliza as seguintes bibliotecas:
+
+    -   Python: 2.7
+    -   Anaconda: 4.4.10
+    -   Pandas: 0.22.0
+    -   scikit-learn: 0.19.1
+    -   matplotlib: 2.2.2
+    -   seaborn: 0.8.1
