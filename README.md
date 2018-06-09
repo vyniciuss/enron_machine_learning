@@ -1,4 +1,4 @@
-# Indentificando fraude a partir de e-mails da Enron
+# Identificando fraude a partir de e-mails da Enron
 
 O projeto faz parte do curso Data Science para Negócios da Udacity
 
