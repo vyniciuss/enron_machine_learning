@@ -1,6 +1,6 @@
 # Identificando fraude a partir de e-mails da Enron
 
-O projeto faz parte do curso Data Science para Negócios da Udacity
+O projeto faz parte do curso Data Science para Negócios da Udacity - Introdução a Machine Learning
 
 ![alt text](https://github.com/vyniciuss/enron_machine_learning/blob/master/enron.jpg)
 
